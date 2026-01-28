@@ -34,17 +34,36 @@ public class Projectile : MonoBehaviour
     public string targetTag = "Player";
 
     private Rigidbody rb;
+    private Transform target;
+    private Vector3 direction;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
 
-        // Запускаем снаряд вперёд
-        rb.linearVelocity = transform.forward * speed;
+        // Если есть цель — летим к ней, иначе вперёд
+        if (target != null)
+        {
+            direction = (target.position - transform.position).normalized;
+            // Поворачиваем снаряд в направлении цели
+            transform.rotation = Quaternion.LookRotation(direction);
+        }
+        else
+        {
+            direction = transform.forward;
+        }
+
+        rb.linearVelocity = direction * speed;
 
         // Уничтожаем через время жизни
         Destroy(gameObject, lifetime);
+    }
+
+    // Установить цель для наведения
+    public void SetTarget(Transform newTarget)
+    {
+        target = newTarget;
     }
 
     private void OnTriggerEnter(Collider other)

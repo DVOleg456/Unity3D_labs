@@ -104,6 +104,13 @@ public class Turret : MonoBehaviour
             firePoint.rotation
         );
 
+        // Передаём цель снаряду для точного наведения
+        Projectile proj = projectile.GetComponent<Projectile>();
+        if (proj != null)
+        {
+            proj.SetTarget(target);
+        }
+
         Debug.Log("Турель стреляет!");
     }
 
