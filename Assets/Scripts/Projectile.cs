@@ -33,6 +33,19 @@ public class Projectile : MonoBehaviour
     [Tooltip("Тег цели")]
     public string targetTag = "Player";
 
+    [Header("Визуализация")]
+    [Tooltip("Включить след снаряда")]
+    public bool enableTrail = true;
+
+    [Tooltip("Цвет следа")]
+    public Color trailColor = Color.yellow;
+
+    [Tooltip("Ширина следа")]
+    public float trailWidth = 0.3f;
+
+    [Tooltip("Время жизни следа")]
+    public float trailTime = 0.3f;
+
     private Rigidbody rb;
     private Transform target;
     private Vector3 direction;
@@ -56,8 +69,31 @@ public class Projectile : MonoBehaviour
 
         rb.linearVelocity = direction * speed;
 
+        // Создаём визуальный след
+        if (enableTrail)
+        {
+            SetupTrail();
+        }
+
         // Уничтожаем через время жизни
         Destroy(gameObject, lifetime);
+    }
+
+    // Настройка визуального следа снаряда
+    private void SetupTrail()
+    {
+        TrailRenderer trail = GetComponent<TrailRenderer>();
+        if (trail == null)
+        {
+            trail = gameObject.AddComponent<TrailRenderer>();
+        }
+
+        trail.time = trailTime;
+        trail.startWidth = trailWidth;
+        trail.endWidth = 0f;
+        trail.material = new Material(Shader.Find("Sprites/Default"));
+        trail.startColor = trailColor;
+        trail.endColor = new Color(trailColor.r, trailColor.g, trailColor.b, 0f);
     }
 
     // Установить цель для наведения

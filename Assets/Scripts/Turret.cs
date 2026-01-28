@@ -28,8 +28,16 @@ public class Turret : MonoBehaviour
     [Tooltip("Поворачивать только по горизонтали")]
     public bool horizontalOnly = true;
 
+    [Header("Проверка видимости")]
+    [Tooltip("Проверять линию видимости (не стрелять сквозь стены)")]
+    public bool requireLineOfSight = true;
+
+    [Tooltip("Слой препятствий (стены, объекты)")]
+    public LayerMask obstacleLayer = ~0; // По умолчанию все слои
+
     private Transform target;
     private float nextFireTime;
+    private bool hasLineOfSight = false;
 
     private void Start()
     {
@@ -56,9 +64,44 @@ public class Turret : MonoBehaviour
         // Проверяем дальность обнаружения
         if (distanceToTarget <= detectionRange)
         {
+            // Проверяем линию видимости
+            hasLineOfSight = CheckLineOfSight();
+
             RotateTowardsTarget();
-            TryShoot();
+
+            // Стреляем только если видим цель
+            if (!requireLineOfSight || hasLineOfSight)
+            {
+                TryShoot();
+            }
         }
+        else
+        {
+            hasLineOfSight = false;
+        }
+    }
+
+    // Проверка линии видимости до цели (Raycast)
+    private bool CheckLineOfSight()
+    {
+        Vector3 startPos = firePoint != null ? firePoint.position : transform.position;
+        Vector3 direction = target.position - startPos;
+        float distance = direction.magnitude;
+
+        // Пускаем луч от точки стрельбы к игроку
+        if (Physics.Raycast(startPos, direction.normalized, out RaycastHit hit, distance, obstacleLayer))
+        {
+            // Если луч попал в игрока — видим его
+            if (hit.transform == target)
+            {
+                return true;
+            }
+            // Если попали во что-то другое — есть препятствие
+            return false;
+        }
+
+        // Луч ни во что не попал — путь свободен
+        return true;
     }
 
     // Поворот турели к цели
@@ -114,10 +157,19 @@ public class Turret : MonoBehaviour
         Debug.Log("Турель стреляет!");
     }
 
-    // Визуализация радиуса обнаружения в Scene View
+    // Визуализация радиуса обнаружения и линии видимости в Scene View
     private void OnDrawGizmosSelected()
     {
+        // Радиус обнаружения
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
+
+        // Линия видимости до игрока
+        if (target != null)
+        {
+            Vector3 startPos = firePoint != null ? firePoint.position : transform.position;
+            Gizmos.color = hasLineOfSight ? Color.green : Color.red;
+            Gizmos.DrawLine(startPos, target.position);
+        }
     }
 }
